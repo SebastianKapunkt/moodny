@@ -9,19 +9,22 @@ class Mood {
   final double tiredness;
   final double tension;
   final String comment;
+  final DateTime createdAt;
 
   const Mood({
     required this.id,
     required this.tiredness,
     required this.tension,
     required this.comment,
+    required this.createdAt,
   });
 
   Map<String, Object?> toMap(newEntry) {
     Map<String, dynamic> map = {
-      'tiredness': tiredness,
-      'tension': tension,
-      'comment': comment,
+      DatabaseHelper.moodTiredness: tiredness,
+      DatabaseHelper.moodTension: tension,
+      DatabaseHelper.moodComment: comment,
+      DatabaseHelper.moodCreated: createdAt.millisecondsSinceEpoch
     };
     if (!newEntry) {
       map['id'] = id;
@@ -35,12 +38,13 @@ class Mood {
       tiredness: item['tiredness'].toDouble(),
       tension: item['tension'].toDouble(),
       comment: item['comment'],
+      createdAt: DateTime.fromMillisecondsSinceEpoch(item['created_at'])
     );
   }
 
   @override
   String toString() {
-    return 'Mood{id: $id, comment: $comment, tiredness: $tiredness, tension: $tension}';
+    return 'Mood{id: $id, comment: $comment, tiredness: $tiredness, tension: $tension, created_at: $createdAt}';
   }
 }
 
@@ -54,6 +58,7 @@ class DatabaseHelper {
   static String moodComment = 'comment';
   static String moodTiredness = 'tiredness';
   static String moodTension = 'tension';
+  static String moodCreated = 'created_at';
 
   DatabaseHelper._createInstance();
 
@@ -73,7 +78,7 @@ class DatabaseHelper {
   void _createTable(Database db, int newVersion) async {
     if (_database == null) {
       await db.execute(
-          'CREATE TABLE $moodTable (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, $moodComment TEXT, $moodTiredness NUMERIC, $moodTension NUMERIC)');
+          "CREATE TABLE $moodTable (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, $moodComment TEXT, $moodTiredness NUMERIC, $moodTension NUMERIC, $moodCreated NUMERIC)");
     }
   }
 
@@ -144,6 +149,7 @@ class _StartPageState extends State<StartPage> {
             tension: _tensionSliderValue,
             tiredness: _tiredNessSliderValue,
             comment: _commentController.text,
+            createdAt: DateTime.now(),
           );
           helper.insertMood(mood);
 
