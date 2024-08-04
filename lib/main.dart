@@ -34,12 +34,11 @@ class Mood {
 
   static Mood fromMap(item) {
     return Mood(
-      id: item['id'],
-      tiredness: item['tiredness'].toDouble(),
-      tension: item['tension'].toDouble(),
-      comment: item['comment'],
-      createdAt: DateTime.fromMillisecondsSinceEpoch(item['created_at'])
-    );
+        id: item['id'],
+        tiredness: item['tiredness'].toDouble(),
+        tension: item['tension'].toDouble(),
+        comment: item['comment'],
+        createdAt: DateTime.fromMillisecondsSinceEpoch(item['created_at']));
   }
 
   @override
@@ -113,25 +112,88 @@ class App extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.lightGreen),
+        colorSchemeSeed: Colors.green,
+        brightness: Brightness.dark,
         useMaterial3: true,
       ),
       themeMode: ThemeMode.dark,
-      home: const StartPage(title: ''),
+      home: DefaultTabController(
+        length: 3,
+        child: Scaffold(
+          appBar: AppBar(
+            bottom: const TabBar(
+              tabs: [
+                Tab(text: 'capture'),
+                Tab(text: 'entries'),
+              ],
+            ),
+            title: const Text('Moodny'),
+          ),
+          body: const TabBarView(
+            children: [CapturePage(title: ''), EntryPage(title: '')],
+          ),
+        ),
+      ),
     );
   }
 }
 
-class StartPage extends StatefulWidget {
-  const StartPage({super.key, required this.title});
+class EntryPage extends StatefulWidget {
+  const EntryPage({super.key, required this.title});
 
   final String title;
 
   @override
-  State<StartPage> createState() => _StartPageState();
+  State<EntryPage> createState() => _EntryPageState();
 }
 
-class _StartPageState extends State<StartPage> {
+class _EntryPageState extends State<EntryPage> {
+  DatabaseHelper helper = DatabaseHelper();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SingleChildScrollView(
+        child: Column(
+          children: [getMoodList()],
+        ),
+      ),
+    );
+  }
+
+  SizedBox getMoodList() {
+    return SizedBox(
+      height: 500,
+      child: FutureBuilder<List<Mood>?>(
+        future: DatabaseHelper().getMood(),
+        builder: (context, snapshot) {
+          if (snapshot.hasData &&
+              snapshot.connectionState == ConnectionState.done) {
+            return ListView.builder(
+              itemCount: snapshot.data!.length,
+              itemBuilder: (context, index) {
+                return Text(snapshot.data?[index].toString() ?? "got null");
+              },
+            );
+          } else {
+            return const Text("no result");
+          }
+        },
+      ),
+    );
+  }
+}
+
+class CapturePage extends StatefulWidget {
+  const CapturePage({super.key, required this.title});
+
+  final String title;
+
+  @override
+  State<CapturePage> createState() => _CapturePageState();
+}
+
+class _CapturePageState extends State<CapturePage> {
   final TextEditingController _commentController = TextEditingController();
   double _tensionSliderValue = 50;
   double _tiredNessSliderValue = 50;
@@ -163,19 +225,16 @@ class _StartPageState extends State<StartPage> {
         icon: const Icon(Icons.add),
         label: const Text('save'),
       ),
-      body: Center(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              const SizedBox(height: 100),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [getTensionSlider(), getTirednessSlider()],
-              ),
-              getComment(),
-              getMoodList(),
-            ],
-          ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            const SizedBox(height: 64),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [getTensionSlider(), getTirednessSlider()],
+            ),
+            getComment(),
+          ],
         ),
       ),
     );
@@ -201,7 +260,7 @@ class _StartPageState extends State<StartPage> {
       children: [
         const Text("Tiredness"),
         SizedBox(
-          height: 450,
+          height: 350,
           child: RotatedBox(
             quarterTurns: -1,
             child: SliderTheme(
@@ -231,7 +290,7 @@ class _StartPageState extends State<StartPage> {
     return Column(children: [
       const Text("Tension"),
       SizedBox(
-        height: 450,
+        height: 350,
         child: RotatedBox(
           quarterTurns: -1,
           child: SliderTheme(
@@ -254,27 +313,5 @@ class _StartPageState extends State<StartPage> {
         ),
       ),
     ]);
-  }
-
-  SizedBox getMoodList() {
-    return SizedBox(
-      height: 500,
-      child: FutureBuilder<List<Mood>?>(
-        future: DatabaseHelper().getMood(),
-        builder: (context, snapshot) {
-          if (snapshot.hasData &&
-              snapshot.connectionState == ConnectionState.done) {
-            return ListView.builder(
-              itemCount: snapshot.data!.length,
-              itemBuilder: (context, index) {
-                return Text(snapshot.data?[index].toString() ?? "got null");
-              },
-            );
-          } else {
-            return const Text("no result");
-          }
-        },
-      ),
-    );
   }
 }
